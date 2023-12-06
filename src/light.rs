@@ -1,12 +1,12 @@
-use crate::{sys::*, Color3D, Vector2D, Vector3D};
+use crate::{sys::*, Color3D, ConvertInto};
 use derivative::Derivative;
-use num_enum::Default;
+use glam::{Vec2, Vec3};
 
 #[derive(Derivative)]
 #[derivative(Debug)]
 pub struct Light {
-    pub up: Vector3D,
-    pub pos: Vector3D,
+    pub up: Vec3,
+    pub pos: Vec3,
     pub name: String,
     pub angle_inner_cone: f32,
     pub angle_outer_cone: f32,
@@ -16,16 +16,16 @@ pub struct Light {
     pub color_ambient: Color3D,
     pub color_specular: Color3D,
     pub color_diffuse: Color3D,
-    pub direction: Vector3D,
-    pub size: Vector2D,
+    pub direction: Vec3,
+    pub size: Vec2,
     pub light_source_type: LightSourceType,
 }
 
 impl From<&aiLight> for Light {
     fn from(light: &aiLight) -> Self {
         Self {
-            up: (&light.mUp).into(),
-            pos: (&light.mPosition).into(),
+            up: (&light.mUp).convert_into(),
+            pos: (&light.mPosition).convert_into(),
             name: light.mName.into(),
             angle_inner_cone: light.mAngleInnerCone,
             angle_outer_cone: light.mAngleOuterCone,
@@ -35,8 +35,8 @@ impl From<&aiLight> for Light {
             color_ambient: (&light.mColorAmbient).into(),
             color_specular: (&light.mColorSpecular).into(),
             color_diffuse: (&light.mColorDiffuse).into(),
-            direction: (&light.mDirection).into(),
-            size: (&light.mSize).into(),
+            direction: (&light.mDirection).convert_into(),
+            size: (&light.mSize).convert_into(),
             light_source_type: (light.mType).into(),
         }
     }

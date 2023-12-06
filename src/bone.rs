@@ -9,7 +9,7 @@ use derivative::Derivative;
 pub struct Bone {
     pub weights: Vec<VertexWeight>,
     pub name: String,
-    pub offset_matrix: Matrix4x4,
+    pub offset_matrix: Mat4,
 }
 
 impl From<&aiBone> for Bone {
@@ -17,7 +17,7 @@ impl From<&aiBone> for Bone {
         Bone {
             weights: utils::get_vec(bone.mWeights, bone.mNumWeights),
             name: bone.mName.into(),
-            offset_matrix: (&bone.mOffsetMatrix).into(),
+            offset_matrix: (&bone.mOffsetMatrix).convert_into(),
         }
     }
 }

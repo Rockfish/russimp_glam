@@ -1,5 +1,6 @@
 use crate::{sys::*, *};
 use derivative::Derivative;
+use glam::Quat;
 
 #[derive(Derivative)]
 #[derivative(Debug)]
@@ -42,14 +43,14 @@ impl From<&aiMeshMorphAnim> for MeshMorphAnim {
 #[derivative(Debug)]
 pub struct VectorKey {
     pub time: f64,
-    pub value: Vector3D,
+    pub value: Vec3,
 }
 
 impl From<&aiVectorKey> for VectorKey {
     fn from(vec: &aiVectorKey) -> Self {
         Self {
             time: vec.mTime,
-            value: (&vec.mValue).into(),
+            value: (&vec.mValue).convert_into(),
         }
     }
 }
@@ -59,34 +60,14 @@ impl From<&aiVectorKey> for VectorKey {
 #[derivative(Debug)]
 pub struct QuatKey {
     pub time: f64,
-    pub value: Quaternion,
+    pub value: Quat,
 }
 
 impl From<&aiQuatKey> for QuatKey {
     fn from(quat_key: &aiQuatKey) -> Self {
         Self {
             time: quat_key.mTime,
-            value: (&quat_key.mValue).into(),
-        }
-    }
-}
-
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct Quaternion {
-    pub w: f32,
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-}
-
-impl From<&aiQuaternion> for Quaternion {
-    fn from(quaternion: &aiQuaternion) -> Self {
-        Self {
-            w: quaternion.w,
-            x: quaternion.x,
-            y: quaternion.y,
-            z: quaternion.z,
+            value: (&quat_key.mValue).convert_into(),
         }
     }
 }

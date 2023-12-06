@@ -16,7 +16,8 @@ use std::{
     fmt::{Display, Formatter},
     str::Utf8Error,
 };
-use sys::{aiAABB, aiColor3D, aiColor4D, aiMatrix4x4, aiVector2D, aiVector3D};
+use glam::{Mat4, Quat, Vec2, Vec3, vec4};
+use sys::{aiAABB, aiColor3D, aiColor4D, aiMatrix4x4, aiQuaternion, aiVector2D, aiVector3D};
 
 #[macro_use]
 extern crate num_derive;
@@ -37,7 +38,7 @@ pub mod scene;
 pub enum RussimpError {
     Import(String),
     MetadataError(String),
-    MeterialError(String),
+    MaterialError(String),
     Primitive(String),
     TextureNotFound,
 }
@@ -59,15 +60,15 @@ impl Display for RussimpError {
 #[derivative(Debug)]
 #[repr(C)]
 pub struct AABB {
-    pub min: Vector3D,
-    pub max: Vector3D,
+    pub min: Vec3,
+    pub max: Vec3,
 }
 
 impl From<&aiAABB> for AABB {
     fn from(aabb: &aiAABB) -> Self {
         Self {
-            max: (&aabb.mMax).into(),
-            min: (&aabb.mMin).into(),
+            max: (&aabb.mMax).convert_into(),
+            min: (&aabb.mMin).convert_into(),
         }
     }
 }
@@ -111,48 +112,55 @@ impl From<&aiColor3D> for Color3D {
         }
     }
 }
-#[derive(Clone, Copy, Default, Derivative)]
-#[derivative(Debug)]
-#[repr(C)]
-pub struct Matrix4x4 {
-    pub a1: f32,
-    pub a2: f32,
-    pub a3: f32,
-    pub a4: f32,
-    pub b1: f32,
-    pub b2: f32,
-    pub b3: f32,
-    pub b4: f32,
-    pub c1: f32,
-    pub c2: f32,
-    pub c3: f32,
-    pub c4: f32,
-    pub d1: f32,
-    pub d2: f32,
-    pub d3: f32,
-    pub d4: f32,
+
+pub trait ConvertFrom<T>: Sized {
+    /// Converts to this type from the input type.
+    fn convert_from(value: T) -> Self;
 }
 
-impl From<&aiMatrix4x4> for Matrix4x4 {
-    fn from(matrix: &aiMatrix4x4) -> Self {
-        Self {
-            a1: matrix.a1,
-            a2: matrix.a2,
-            a3: matrix.a3,
-            a4: matrix.a4,
-            b1: matrix.b1,
-            b2: matrix.b2,
-            b3: matrix.b3,
-            b4: matrix.b4,
-            c1: matrix.c1,
-            c2: matrix.c2,
-            c3: matrix.c3,
-            c4: matrix.c4,
-            d1: matrix.d1,
-            d2: matrix.d2,
-            d3: matrix.d3,
-            d4: matrix.d4,
-        }
+// local replacement for From trait for foreign types
+trait ConvertInto<T>: Sized {
+    fn convert_into(&self) -> T;
+}
+
+impl ConvertFrom<&aiVector3D> for Vec3 {
+    fn convert_from(value: &aiVector3D) -> Self {
+        Vec3::new(value.x, value.y, value.z)
+    }
+}
+
+impl ConvertInto<Mat4> for &aiMatrix4x4 {
+    fn convert_into(&self) -> Mat4 {
+        Mat4::from_cols(
+            vec4(self.a1, self.b1, self.c1, self.d1), // m00, m01, m02, m03
+            vec4(self.a2, self.b2, self.c2, self.d2), // m10, m11, m12, m13
+            vec4(self.a3, self.b3, self.c3, self.d3), // m20, m21, m22, m23
+            vec4(self.a4, self.b4, self.c4, self.d4), // m30, m31, m32, m33
+        )
+    }
+}
+
+impl ConvertInto<Vec2> for &aiVector2D {
+    fn convert_into(&self) -> Vec2 {
+        Vec2::new(self.x, self.y)
+    }
+}
+
+impl ConvertInto<Vec3> for &aiVector3D {
+    fn convert_into(&self) -> Vec3 {
+        Vec3::new(self.x, self.y, self.z)
+    }
+}
+
+impl ConvertInto<Vec3> for aiVector3D {
+    fn convert_into(&self) -> Vec3 {
+        Vec3::new(self.x, self.y, self.z)
+    }
+}
+
+impl ConvertInto<Quat> for aiQuaternion {
+    fn convert_into(&self) -> Quat {
+        Quat::from_xyzw(self.x, self.y, self.z, self.w)
     }
 }
 
@@ -162,36 +170,6 @@ impl From<&aiMatrix4x4> for Matrix4x4 {
 pub struct Vector2D {
     pub x: f32,
     pub y: f32,
-}
-
-impl From<&aiVector2D> for Vector2D {
-    fn from(color: &aiVector2D) -> Self {
-        Self {
-            x: color.x,
-            y: color.y,
-        }
-    }
-}
-
-impl Error for RussimpError {}
-
-#[derive(Clone, Copy, Default, Derivative, PartialEq)]
-#[derivative(Debug)]
-#[repr(C)]
-pub struct Vector3D {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-}
-
-impl From<&aiVector3D> for Vector3D {
-    fn from(vec: &aiVector3D) -> Self {
-        Self {
-            x: vec.x,
-            y: vec.y,
-            z: vec.z,
-        }
-    }
 }
 
 impl From<Utf8Error> for RussimpError {
@@ -208,8 +186,9 @@ impl From<IntoStringError> for RussimpError {
 
 pub type Russult<T> = Result<T, RussimpError>;
 
-mod utils {
+pub mod utils {
     use std::{os::raw::c_uint, ptr::slice_from_raw_parts};
+    use crate::{ConvertFrom, ConvertInto};
 
     pub(crate) fn get_base_type_vec_from_raw<'a, TRaw: 'a>(
         data: *mut *mut TRaw,
@@ -255,7 +234,22 @@ mod utils {
         raw.iter().map(|x| x.into()).collect()
     }
 
-    pub(crate) fn get_raw_vec<TRaw>(raw: *mut TRaw, len: c_uint) -> Vec<TRaw>
+    pub(crate) fn get_vec_2<'a, TRaw: 'a, TComponent: ConvertFrom<&'a TRaw>, T>(
+        raw: *mut TRaw,
+        len: c_uint,
+    ) -> Vec<TComponent>
+    where TRaw: ConvertInto<T>, Vec<TComponent>: FromIterator<T>
+    {
+        let slice = slice_from_raw_parts(raw as *const TRaw, len as usize);
+        if slice.is_null() {
+            return vec![];
+        }
+
+        let raw = unsafe { slice.as_ref() }.unwrap();
+        raw.iter().map(|x| x.convert_into()).collect()
+    }
+
+    pub fn get_raw_vec<TRaw>(raw: *mut TRaw, len: c_uint) -> Vec<TRaw>
     where
         TRaw: Clone,
     {
@@ -268,7 +262,7 @@ mod utils {
         raw.to_vec()
     }
 
-    pub(crate) fn get_vec_from_raw<'a, TComponent: From<&'a TRaw>, TRaw: 'a>(
+    pub fn get_vec_from_raw<'a, TComponent: From<&'a TRaw>, TRaw: 'a>(
         raw_source: *mut *mut TRaw,
         num_raw_items: c_uint,
     ) -> Vec<TComponent> {
@@ -289,6 +283,17 @@ mod utils {
     ) -> Vec<Option<Vec<TComponent>>> {
         raw.iter()
             .map(|head| unsafe { head.as_mut() }.map(|head| get_vec(head, len)))
+            .collect()
+    }
+
+    pub(crate) fn get_vec_of_vecs_from_raw_2<'a, TRaw: 'a, TComponent: ConvertFrom<&'a TRaw>, T>(
+        raw: [*mut TRaw; 8usize],
+        len: c_uint,
+    ) -> Vec<Option<Vec<TComponent>>>
+        where TRaw: ConvertInto<T>, Vec<TComponent>: FromIterator<T>
+    {
+        raw.iter()
+            .map(|head| unsafe { head.as_mut() }.map(|head| get_vec_2(head, len)))
             .collect()
     }
 }

@@ -1,5 +1,7 @@
-use crate::{sys::aiCamera, Vector3D};
+use crate::sys::aiCamera;
 use derivative::Derivative;
+use glam::Vec3;
+use crate::ConvertInto;
 
 #[derive(Derivative)]
 #[derivative(Debug)]
@@ -9,9 +11,9 @@ pub struct Camera {
     pub clip_plane_far: f32,
     pub clip_plane_near: f32,
     pub horizontal_fov: f32,
-    pub look_at: Vector3D,
-    pub position: Vector3D,
-    pub up: Vector3D,
+    pub look_at: Vec3,
+    pub position: Vec3,
+    pub up: Vec3,
 }
 
 impl From<&aiCamera> for Camera {
@@ -22,9 +24,9 @@ impl From<&aiCamera> for Camera {
             clip_plane_far: camera.mClipPlaneFar,
             clip_plane_near: camera.mClipPlaneNear,
             horizontal_fov: camera.mHorizontalFOV,
-            look_at: (&camera.mLookAt).into(),
-            position: (&camera.mPosition).into(),
-            up: (&camera.mUp).into(),
+            look_at: (&camera.mLookAt).convert_into(),
+            position: (&camera.mPosition).convert_into(),
+            up: (&camera.mUp).convert_into(),
         }
     }
 }

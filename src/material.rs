@@ -81,6 +81,7 @@ impl From<&aiTexel> for Texel {
 pub enum DataContent {
     Texel(Vec<Texel>),
     Bytes(Vec<u8>),
+    None,
 }
 
 pub(crate) fn generate_materials(scene: &aiScene) -> Russult<Vec<Material>> {
@@ -112,6 +113,15 @@ pub(crate) fn generate_materials(scene: &aiScene) -> Russult<Vec<Material>> {
                             converted_textures.get(&embedded_texture).unwrap().clone(),
                         );
                     }
+                } else {
+                    let new_texture = Texture {
+                        height: 0,
+                        width: 0,
+                        filename: material_filename.into(),
+                        ach_format_hint: "".to_string(),
+                        data: DataContent::None,
+                    };
+                    material_textures.insert(tex_type, Rc::new(RefCell::new(new_texture)));
                 }
             }
         }
@@ -356,7 +366,7 @@ impl<'a> MaterialPropertyCaster for IntegerPropertyContent<'a> {
         }
 
         let key_string: String = self.key.into();
-        Err(RussimpError::MeterialError(format!(
+        Err(RussimpError::MaterialError(format!(
             "Error while parsing {} to f32",
             key_string
         )))
@@ -394,7 +404,7 @@ impl<'a> MaterialPropertyCaster for FloatPropertyContent<'a> {
         }
 
         let key_string: String = self.key.into();
-        Err(RussimpError::MeterialError(format!(
+        Err(RussimpError::MaterialError(format!(
             "Error while parsing {} to f32",
             key_string
         )))
@@ -423,7 +433,7 @@ impl<'a> MaterialPropertyCaster for StringPropertyContent<'a> {
         }
 
         let key_string: String = self.key.into();
-        Err(RussimpError::MeterialError(format!(
+        Err(RussimpError::MaterialError(format!(
             "Error while parsing {} to string",
             key_string
         )))
@@ -487,7 +497,7 @@ impl MaterialProperty {
             }
         }
 
-        Err(RussimpError::MeterialError(
+        Err(RussimpError::MaterialError(
             "could not find caster for property type".to_string(),
         ))
     }

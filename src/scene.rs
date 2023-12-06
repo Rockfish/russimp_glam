@@ -400,7 +400,7 @@ pub enum PostProcess {
 pub type PostProcessSteps = Vec<PostProcess>;
 
 impl Scene {
-    fn new(scene: &aiScene) -> Russult<Self> {
+    pub fn new(scene: &aiScene) -> Russult<Self> {
         let root = unsafe { scene.mRootNode.as_ref() };
 
         Ok(Self {

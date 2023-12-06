@@ -2,6 +2,11 @@
 
 Rust bindings for Assimp (https://github.com/assimp/assimp)
 
+# Fork Changes
+
+This is a fork of Russimp (https://github.com/jkvargas/russimp) that integrates 
+the use of glam for math objects and converts them to column major for use with systems like opengl.
+
 # Overview
 
 Russimp is a library for talking to the assimp library which enables you to read 3d models in different formats to a common structure.

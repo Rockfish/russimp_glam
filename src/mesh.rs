@@ -6,12 +6,12 @@ use std::ops::{BitAnd, BitOr};
 #[derive(Default, Derivative)]
 #[derivative(Debug)]
 pub struct Mesh {
-    pub normals: Vec<Vector3D>,
+    pub normals: Vec<Vec3>,
     pub name: String,
-    pub vertices: Vec<Vector3D>,
-    pub texture_coords: Vec<Option<Vec<Vector3D>>>,
-    pub tangents: Vec<Vector3D>,
-    pub bitangents: Vec<Vector3D>,
+    pub vertices: Vec<Vec3>,
+    pub texture_coords: Vec<Option<Vec<Vec3>>>,
+    pub tangents: Vec<Vec3>,
+    pub bitangents: Vec<Vec3>,
     pub uv_components: Vec<u32>,
     pub primitive_types: u32,
     pub bones: Vec<Bone>,
@@ -36,15 +36,15 @@ pub enum PrimitiveType {
 
 impl From<&aiMesh> for Mesh {
     fn from(mesh: &aiMesh) -> Self {
-        let normals = utils::get_vec(mesh.mNormals, mesh.mNumVertices);
+        let normals = utils::get_vec_2(mesh.mNormals, mesh.mNumVertices);
 
         Self {
             normals,
             name: mesh.mName.into(),
-            vertices: utils::get_vec(mesh.mVertices, mesh.mNumVertices),
-            texture_coords: utils::get_vec_of_vecs_from_raw(mesh.mTextureCoords, mesh.mNumVertices),
-            tangents: utils::get_vec(mesh.mTangents, mesh.mNumVertices),
-            bitangents: utils::get_vec(mesh.mBitangents, mesh.mNumVertices),
+            vertices: utils::get_vec_2(mesh.mVertices, mesh.mNumVertices),
+            texture_coords: utils::get_vec_of_vecs_from_raw_2(mesh.mTextureCoords, mesh.mNumVertices),
+            tangents: utils::get_vec_2(mesh.mTangents, mesh.mNumVertices),
+            bitangents: utils::get_vec_2(mesh.mBitangents, mesh.mNumVertices),
             uv_components: mesh.mNumUVComponents.to_vec(),
             primitive_types: mesh.mPrimitiveTypes,
             bones: utils::get_vec_from_raw(mesh.mBones, mesh.mNumBones),
@@ -60,11 +60,11 @@ impl From<&aiMesh> for Mesh {
 
 #[derive(Derivative)]
 #[derivative(Debug)]
-pub struct AnimMesh(pub Vec<Vector3D>);
+pub struct AnimMesh(pub Vec<Vec3>);
 
 impl From<&aiAnimMesh> for AnimMesh {
     fn from(mesh: &aiAnimMesh) -> Self {
-        Self(utils::get_vec(mesh.mBitangents, mesh.mNumVertices))
+        Self(utils::get_vec_2(mesh.mBitangents, mesh.mNumVertices))
     }
 }
 
@@ -232,7 +232,7 @@ mod test {
         // The z coordinates should always be 0
         assert!(uv_chan.iter().all(|set| set.z == 0.0));
 
-        // Transform vector of Vector3D to vector of (x,y) tuples
+        // Transform vector of Vec3 to vector of (x,y) tuples
         let uv_chan: Vec<_> = uv_chan.iter().map(|set| (set.x, set.y)).collect();
 
         assert_eq!(
