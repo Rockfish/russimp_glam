@@ -9,14 +9,13 @@ mod impl_mint;
 pub use impl_mint::*;
 
 use derivative::Derivative;
+use glam::{vec4, Mat4, Quat, Vec2, Vec3};
 use std::{
-    error::Error,
     ffi::IntoStringError,
     fmt,
     fmt::{Display, Formatter},
     str::Utf8Error,
 };
-use glam::{Mat4, Quat, Vec2, Vec3, vec4};
 use sys::{aiAABB, aiColor3D, aiColor4D, aiMatrix4x4, aiQuaternion, aiVector2D, aiVector3D};
 
 #[macro_use]
@@ -187,8 +186,8 @@ impl From<IntoStringError> for RussimpError {
 pub type Russult<T> = Result<T, RussimpError>;
 
 pub mod utils {
-    use std::{os::raw::c_uint, ptr::slice_from_raw_parts};
     use crate::{ConvertFrom, ConvertInto};
+    use std::{os::raw::c_uint, ptr::slice_from_raw_parts};
 
     pub(crate) fn get_base_type_vec_from_raw<'a, TRaw: 'a>(
         data: *mut *mut TRaw,
@@ -238,7 +237,9 @@ pub mod utils {
         raw: *mut TRaw,
         len: c_uint,
     ) -> Vec<TComponent>
-    where TRaw: ConvertInto<T>, Vec<TComponent>: FromIterator<T>
+    where
+        TRaw: ConvertInto<T>,
+        Vec<TComponent>: FromIterator<T>,
     {
         let slice = slice_from_raw_parts(raw as *const TRaw, len as usize);
         if slice.is_null() {
@@ -290,7 +291,9 @@ pub mod utils {
         raw: [*mut TRaw; 8usize],
         len: c_uint,
     ) -> Vec<Option<Vec<TComponent>>>
-        where TRaw: ConvertInto<T>, Vec<TComponent>: FromIterator<T>
+    where
+        TRaw: ConvertInto<T>,
+        Vec<TComponent>: FromIterator<T>,
     {
         raw.iter()
             .map(|head| unsafe { head.as_mut() }.map(|head| get_vec_2(head, len)))

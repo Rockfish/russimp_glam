@@ -1,7 +1,7 @@
 use crate::sys::aiCamera;
+use crate::ConvertInto;
 use derivative::Derivative;
 use glam::Vec3;
-use crate::ConvertInto;
 
 #[derive(Derivative)]
 #[derivative(Debug)]

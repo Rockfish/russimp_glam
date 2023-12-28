@@ -42,7 +42,10 @@ impl From<&aiMesh> for Mesh {
             normals,
             name: mesh.mName.into(),
             vertices: utils::get_vec_2(mesh.mVertices, mesh.mNumVertices),
-            texture_coords: utils::get_vec_of_vecs_from_raw_2(mesh.mTextureCoords, mesh.mNumVertices),
+            texture_coords: utils::get_vec_of_vecs_from_raw_2(
+                mesh.mTextureCoords,
+                mesh.mNumVertices,
+            ),
             tangents: utils::get_vec_2(mesh.mTangents, mesh.mNumVertices),
             bitangents: utils::get_vec_2(mesh.mBitangents, mesh.mNumVertices),
             uv_components: mesh.mNumUVComponents.to_vec(),
